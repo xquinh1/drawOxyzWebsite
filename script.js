@@ -1,107 +1,80 @@
-const canvas = document.getElementById('drawing-canvas');
+// Các phần tử DOM
+const colorButtons = document.querySelectorAll('.color-button');
+const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const imageUpload = document.getElementById('image-upload');
-const addLayerButton = document.getElementById('add-layer');
-const deleteColorButton = document.getElementById('delete-color');
-const brushSizeInput = document.getElementById('brush-size');
-const colorPicker = document.getElementById('color-picker');
-const colorCodeInput = document.getElementById('color-code');
-const colorPalette = document.getElementById('color-palette');
-const downloadImageButton = document.getElementById('download-image');
+const clearButton = document.getElementById('clear');
+const saveButton = document.getElementById('save');
+const penSizeInput = document.getElementById('pen-size');
+const backgroundColorInput = document.getElementById('background-color'); // Thêm biến cho ô chọn màu nền
 
-let drawing = false;
-let lastX, lastY;
-let brushSize = 5;
-let brushColor = '#000000';
+// Biến lưu trữ trạng thái
+let currentColor = '#000000'; // Màu mặc định (đen)
+let currentPenSize = 5; // Kích thước bút vẽ mặc định
+let isDrawing = false; // Trạng thái vẽ
+let lastX = 0, lastY = 0; // Dùng để lưu tọa độ vẽ trước đó
 
-// Add event listeners for drawing
+// Cập nhật màu nền khi người dùng chọn màu mới
+backgroundColorInput.addEventListener('input', (e) => {
+    const selectedColor = e.target.value; // Lấy màu người dùng chọn
+    canvas.style.backgroundColor = selectedColor; // Thay đổi màu nền của canvas
+});
+
+// Thiết lập sự kiện cho các nút màu
+colorButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        currentColor = button.dataset.color; // Lấy màu từ thuộc tính 'data-color'
+        colorButtons.forEach(b => b.classList.remove('active')); // Xóa lớp 'active' khỏi các nút khác
+        button.classList.add('active'); // Thêm lớp 'active' cho nút đã chọn
+    });
+});
+
+// Thiết lập sự kiện cho bút vẽ (thay đổi kích thước bút)
+penSizeInput.addEventListener('input', (e) => {
+    currentPenSize = e.target.value; // Cập nhật kích thước bút theo input
+});
+
+// Sự kiện bắt đầu vẽ
 canvas.addEventListener('mousedown', (e) => {
-  drawing = true;
-  lastX = e.offsetX;
-  lastY = e.offsetY;
+    isDrawing = true;
+    lastX = e.offsetX;
+    lastY = e.offsetY;
 });
 
 canvas.addEventListener('mousemove', (e) => {
-  if (drawing) {
-    const x = e.offsetX;
-    const y = e.offsetY;
+    if (!isDrawing) return;
+
+    const currentX = e.offsetX;
+    const currentY = e.offsetY;
+
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = brushColor;
-    ctx.lineWidth = brushSize;
+    ctx.lineTo(currentX, currentY);
+    ctx.strokeStyle = currentColor; // Màu vẽ
+    ctx.lineWidth = currentPenSize; // Kích thước bút
+    ctx.lineCap = 'round'; // Tạo các đường vẽ mượt mà
     ctx.stroke();
-    lastX = x;
-    lastY = y;
-  }
+
+    lastX = currentX;
+    lastY = currentY;
 });
 
 canvas.addEventListener('mouseup', () => {
-  drawing = false;
+    isDrawing = false;
 });
 
-// Add event listeners for features
-imageUpload.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const imageData = event.target.result;
-    const image = new Image();
-    image.onload = () => {
-      ctx.drawImage(image, 0, 0);
-    };
-    image.src = imageData;
-  };
-  reader.readAsDataURL(file);
+canvas.addEventListener('mouseout', () => {
+    isDrawing = false;
 });
 
-addLayerButton.addEventListener('click', () => {
-  const newCanvas = document.createElement('canvas');
-  newCanvas.width = canvas.width;
-  newCanvas.height = canvas.height;
-  const newCtx = newCanvas.getContext('2d');
-  document.body.appendChild(newCanvas);
+// Clear canvas
+clearButton.addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Xóa tất cả trên canvas
 });
 
-deleteColorButton.addEventListener('click', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
-
-brushSizeInput.addEventListener('input', (e) => {
-  brushSize = e.target.value;
-  ctx.lineWidth = brushSize;
-});
-
-colorPicker.addEventListener('input', (e) => {
-  const color = e.target.value;
-  brushColor = color;
-  ctx.strokeStyle = color;
-  colorCodeInput.value = color;
-});
-
-colorCodeInput.addEventListener('input', (e) => {
-  const color = e.target.value;
-  brushColor = color;
-  ctx.strokeStyle = color;
-  colorPicker.value = color;
-});
-
-const colorSwatches = colorPalette.children;
-for (let i = 0; i < colorSwatches.length; i++) {
-  const swatch = colorSwatches[i];
-  swatch.addEventListener('click', () => {
-    const color = swatch.style.backgroundColor;
-    brushColor = color;
-    ctx.strokeStyle = color;
-    colorPicker.value = color;
-    colorCodeInput.value = color;
-  });
-}
-
-downloadImageButton.addEventListener('click', () => {
-  const imageData = canvas.toDataURL();
-  const link = document.createElement('a');
-  link.href = imageData;
-  link.download = 'drawing.png';
-  link.click();
+// Lưu hình ảnh vẽ dưới dạng file
+saveButton.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL(); // Lấy ảnh từ canvas
+    link.download = 'drawing.png'; // Đặt tên file khi tải về
+    link.click();
 });
