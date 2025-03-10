@@ -78,3 +78,10 @@ saveButton.addEventListener('click', () => {
     link.download = 'drawing.png'; // Đặt tên file khi tải về
     link.click();
 });
+
+const brushColorInput = document.getElementById('brush-color');
+
+brushColorInput.addEventListener('input', (e) => {
+  const brushColor = e.target.value;
+  ctx.strokeStyle = brushColor;
+});
